@@ -1,75 +1,101 @@
-# React + TypeScript + Vite
+# JSON Formatter
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern, responsive JSON formatter built with React and TypeScript.
 
-Currently, two official plugins are available:
+It validates JSON input, pretty-prints output, supports sorting keys, provides interactive expand/collapse controls, and can compact + copy output for sending.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Features
 
-## React Compiler
+- Validate and format JSON input
+- Adjustable output indentation (`2`, `3`, or `4` spaces)
+- Sort object keys alphabetically (recursive)
+- Interactive JSON tree output with per-node expand/collapse
+- Tree controls:
+  - Expand all
+  - Collapse all
+  - Expand to depth `N`
+  - Collapse through depth `N`
+- Compact JSON output mode (single-line, send-ready)
+- Copy output to clipboard
+- Responsive desktop/mobile layout with a minimal green/white/charcoal theme
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+## Tech Stack
 
-Note: This will impact Vite dev & build performances.
+- React
+- TypeScript
+- Vite
+- ESLint
 
-## Expanding the ESLint configuration
+## Getting Started
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Prerequisites
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- Node.js 20+ recommended
+- npm
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### Install
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Run in development
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run dev
 ```
+
+### Build for production
+
+```bash
+npm run build
+```
+
+### Preview production build
+
+```bash
+npm run preview
+```
+
+### Lint
+
+```bash
+npm run lint
+```
+
+## Usage
+
+1. Paste JSON into **Input JSON**.
+2. Click **Validate JSON**.
+3. Use the **Edit Menu** to:
+   - change indentation,
+   - sort keys,
+   - expand/collapse tree nodes globally or by depth,
+   - compact output,
+   - copy output.
+4. Use tree toggle buttons (`+` / `-`) in output to expand/collapse specific objects/arrays.
+
+## Project Structure
+
+```text
+src/
+  components/
+    EditMenu.tsx
+    ExpandCollapseMenu.tsx
+    JsonOutputTree.tsx
+    JsonTextArea.tsx
+    Navbar.tsx
+  utils/
+    jsonFormatter.ts
+    jsonSorting.ts
+    jsonTreeControls.ts
+  App.tsx
+  App.css
+  index.css
+```
+
+## Notes
+
+- The output panel keeps a fixed default height to match the input panel.
+- Both panels are still manually vertically resizable by the user.
+- Compact mode and pretty/tree mode are both available in the same output area.
