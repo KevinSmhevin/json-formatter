@@ -1,34 +1,57 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import './App.css'
 import { Navbar } from './components/Navbar'
 import { JsonTextArea } from './components/JsonTextArea'
 import { EditMenu } from './components/EditMenu'
+import { JsonOutputTree } from './components/JsonOutputTree'
+import { sortJsonKeysAlphabetically } from './utils/jsonSorting'
+import { type IndentSize, validateAndFormatJson } from './utils/jsonFormatter'
 import {
-  formatJsonOutput,
-  type IndentSize,
-  validateAndFormatJson,
-} from './utils/jsonFormatter'
+  getAllCollapsiblePaths,
+  getCollapsedPathsForCollapseDepth,
+  getCollapsedPathsForExpandDepth,
+} from './utils/jsonTreeControls'
 
 function App() {
   const [inputValue, setInputValue] = useState('')
-  const [outputValue, setOutputValue] = useState('')
   const [validatedJson, setValidatedJson] = useState<unknown | null>(null)
   const [indentSize, setIndentSize] = useState<IndentSize>(2)
   const [sortKeysAlphabetically, setSortKeysAlphabetically] = useState(false)
+  const [collapsedPaths, setCollapsedPaths] = useState<Set<string>>(new Set())
+  const [depthValue, setDepthValue] = useState('2')
   const [statusMessage, setStatusMessage] = useState(
     'Enter JSON, then click Validate JSON.',
   )
   const [isError, setIsError] = useState(false)
+
+  const displayedJson = useMemo(() => {
+    if (validatedJson === null) {
+      return null
+    }
+
+    return sortKeysAlphabetically
+      ? sortJsonKeysAlphabetically(validatedJson)
+      : validatedJson
+  }, [validatedJson, sortKeysAlphabetically])
+
+  const parseDepthValue = (): number => {
+    const parsedValue = Number.parseInt(depthValue, 10)
+    if (Number.isNaN(parsedValue)) {
+      return 0
+    }
+
+    return Math.max(0, parsedValue)
+  }
 
   const handleValidateJson = () => {
     const result = validateAndFormatJson(inputValue, {
       indentSize,
       sortKeysAlphabetically,
     })
-    setOutputValue(result.formatted)
     setStatusMessage(result.message)
     setIsError(!result.isValid)
     setValidatedJson(result.parsedValue)
+    setCollapsedPaths(new Set())
   }
 
   const handleIndentChange = (nextIndent: IndentSize) => {
@@ -38,12 +61,6 @@ function App() {
       return
     }
 
-    setOutputValue(
-      formatJsonOutput(validatedJson, {
-        indentSize: nextIndent,
-        sortKeysAlphabetically,
-      }),
-    )
     setStatusMessage(`Output indentation updated to ${nextIndent} spaces.`)
     setIsError(false)
   }
@@ -55,17 +72,61 @@ function App() {
       return
     }
 
-    setOutputValue(
-      formatJsonOutput(validatedJson, {
-        indentSize,
-        sortKeysAlphabetically: nextValue,
-      }),
-    )
     setStatusMessage(
       nextValue
         ? 'Output keys sorted alphabetically.'
         : 'Output key sorting turned off.',
     )
+    setIsError(false)
+  }
+
+  const handleTogglePath = (path: string) => {
+    setCollapsedPaths((currentPaths) => {
+      const nextPaths = new Set(currentPaths)
+      if (nextPaths.has(path)) {
+        nextPaths.delete(path)
+      } else {
+        nextPaths.add(path)
+      }
+      return nextPaths
+    })
+  }
+
+  const handleExpandAll = () => {
+    setCollapsedPaths(new Set())
+    setStatusMessage('Expanded all JSON nodes.')
+    setIsError(false)
+  }
+
+  const handleCollapseAll = () => {
+    if (displayedJson === null) {
+      return
+    }
+
+    setCollapsedPaths(getAllCollapsiblePaths(displayedJson))
+    setStatusMessage('Collapsed all JSON nodes.')
+    setIsError(false)
+  }
+
+  const handleExpandByDepth = () => {
+    if (displayedJson === null) {
+      return
+    }
+
+    const depth = parseDepthValue()
+    setCollapsedPaths(getCollapsedPathsForExpandDepth(displayedJson, depth))
+    setStatusMessage(`Expanded JSON to depth ${depth}.`)
+    setIsError(false)
+  }
+
+  const handleCollapseByDepth = () => {
+    if (displayedJson === null) {
+      return
+    }
+
+    const depth = parseDepthValue()
+    setCollapsedPaths(getCollapsedPathsForCollapseDepth(displayedJson, depth))
+    setStatusMessage(`Collapsed JSON through depth ${depth}.`)
     setIsError(false)
   }
 
@@ -82,12 +143,11 @@ function App() {
               value={inputValue}
               onChange={setInputValue}
             />
-            <JsonTextArea
-              id="json-output"
-              label="Formatted Output"
-              placeholder="Formatted JSON appears here..."
-              value={outputValue}
-              readOnly
+            <JsonOutputTree
+              value={displayedJson}
+              indentSize={indentSize}
+              collapsedPaths={collapsedPaths}
+              onTogglePath={handleTogglePath}
             />
           </div>
 
@@ -99,8 +159,14 @@ function App() {
               <EditMenu
                 selectedIndent={indentSize}
                 sortKeysAlphabetically={sortKeysAlphabetically}
+                depthValue={depthValue}
                 onIndentChange={handleIndentChange}
                 onSortKeysChange={handleSortKeysChange}
+                onDepthValueChange={setDepthValue}
+                onExpandAll={handleExpandAll}
+                onCollapseAll={handleCollapseAll}
+                onExpandByDepth={handleExpandByDepth}
+                onCollapseByDepth={handleCollapseByDepth}
               />
             </div>
             <p className={`status-message ${isError ? 'error' : 'success'}`} role="status">
