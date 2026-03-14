@@ -59,6 +59,7 @@
 
 .json-text-area-input {
   width: 100%;
+  height: 320px;
   min-height: 320px;
   resize: vertical;
   border: 1px solid var(--color-border);
@@ -88,6 +89,7 @@
 
 .json-output-viewer {
   width: 100%;
+  height: 320px;
   min-height: 320px;
   max-height: 75vh;
   resize: vertical;
@@ -104,6 +106,12 @@
 .json-output-placeholder {
   margin: 0;
   color: var(--color-muted);
+}
+
+.json-output-compact-text {
+  margin: 0;
+  white-space: pre;
+  overflow-x: auto;
 }
 
 .json-tree-line {
@@ -173,6 +181,8 @@
 .status-message {
   margin: 0;
   font-size: 0.92rem;
+  width: 100%;
+  min-height: 1.4rem;
 }
 
 .status-message.success {
@@ -317,17 +327,28 @@
   }
 
   .json-text-area-input {
+    height: 430px;
     min-height: 430px;
   }
 
   .json-output-viewer {
+    height: 430px;
     min-height: 430px;
   }
 
   .action-row {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    align-items: start;
     gap: 1rem;
+  }
+
+  .controls-group {
+    width: 100%;
+  }
+
+  .status-message {
+    width: 320px;
+    text-align: right;
   }
 }

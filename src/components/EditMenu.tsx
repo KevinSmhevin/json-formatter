@@ -5,6 +5,8 @@ type EditMenuProps = {
   selectedIndent: IndentSize
   sortKeysAlphabetically: boolean
   depthValue: string
+  onCompactJson: () => void
+  onCopyOutput: () => void
   onIndentChange: (indent: IndentSize) => void
   onSortKeysChange: (value: boolean) => void
   onDepthValueChange: (value: string) => void
@@ -18,6 +20,8 @@ export const EditMenu = ({
   selectedIndent,
   sortKeysAlphabetically,
   depthValue,
+  onCompactJson,
+  onCopyOutput,
   onIndentChange,
   onSortKeysChange,
   onDepthValueChange,
@@ -53,6 +57,14 @@ export const EditMenu = ({
           />
           Sort keys alphabetically
         </label>
+
+        <button type="button" className="edit-menu-button" onClick={onCompactJson}>
+          Compact JSON
+        </button>
+
+        <button type="button" className="edit-menu-button" onClick={onCopyOutput}>
+          Copy Output
+        </button>
       </div>
 
       <ExpandCollapseMenu

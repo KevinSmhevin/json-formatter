@@ -4,6 +4,7 @@ import { buildChildPath, ROOT_JSON_PATH } from '../utils/jsonTreeControls'
 
 type JsonOutputTreeProps = {
   value: unknown | null
+  compactOutput: string | null
   indentSize: IndentSize
   collapsedPaths: Set<string>
   onTogglePath: (path: string) => void
@@ -125,6 +126,7 @@ const renderNode = ({
 
 export const JsonOutputTree = ({
   value,
+  compactOutput,
   indentSize,
   collapsedPaths,
   onTogglePath,
@@ -135,7 +137,9 @@ export const JsonOutputTree = ({
         Formatted Output
       </label>
       <div id="json-output-tree" className="json-output-viewer" role="region" aria-live="polite">
-        {value === null ? (
+        {compactOutput !== null ? (
+          <p className="json-output-compact-text">{compactOutput}</p>
+        ) : value === null ? (
           <p className="json-output-placeholder">Formatted JSON appears here...</p>
         ) : (
           renderNode({

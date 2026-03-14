@@ -21,8 +21,14 @@ export const formatJsonOutput = (value: unknown, options: FormatOptions): string
   return JSON.stringify(normalizedValue, null, options.indentSize)
 }
 
-export const formatJsonWithIndent = (value: unknown, indentSize: IndentSize): string => {
-  return JSON.stringify(value, null, indentSize)
+export const formatCompactJsonOutput = (
+  value: unknown,
+  sortKeysAlphabetically: boolean,
+): string => {
+  const normalizedValue = sortKeysAlphabetically
+    ? sortJsonKeysAlphabetically(value)
+    : value
+  return JSON.stringify(normalizedValue)
 }
 
 export const validateAndFormatJson = (

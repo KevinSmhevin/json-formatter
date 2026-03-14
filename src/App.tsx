@@ -5,7 +5,12 @@ import { JsonTextArea } from './components/JsonTextArea'
 import { EditMenu } from './components/EditMenu'
 import { JsonOutputTree } from './components/JsonOutputTree'
 import { sortJsonKeysAlphabetically } from './utils/jsonSorting'
-import { type IndentSize, validateAndFormatJson } from './utils/jsonFormatter'
+import {
+  formatCompactJsonOutput,
+  formatJsonOutput,
+  type IndentSize,
+  validateAndFormatJson,
+} from './utils/jsonFormatter'
 import {
   getAllCollapsiblePaths,
   getCollapsedPathsForCollapseDepth,
@@ -18,6 +23,7 @@ function App() {
   const [indentSize, setIndentSize] = useState<IndentSize>(2)
   const [sortKeysAlphabetically, setSortKeysAlphabetically] = useState(false)
   const [collapsedPaths, setCollapsedPaths] = useState<Set<string>>(new Set())
+  const [compactOutput, setCompactOutput] = useState<string | null>(null)
   const [depthValue, setDepthValue] = useState('2')
   const [statusMessage, setStatusMessage] = useState(
     'Enter JSON, then click Validate JSON.',
@@ -33,6 +39,21 @@ function App() {
       ? sortJsonKeysAlphabetically(validatedJson)
       : validatedJson
   }, [validatedJson, sortKeysAlphabetically])
+
+  const outputToCopy = useMemo(() => {
+    if (compactOutput !== null) {
+      return compactOutput
+    }
+
+    if (displayedJson === null) {
+      return null
+    }
+
+    return formatJsonOutput(displayedJson, {
+      indentSize,
+      sortKeysAlphabetically: false,
+    })
+  }, [compactOutput, displayedJson, indentSize])
 
   const parseDepthValue = (): number => {
     const parsedValue = Number.parseInt(depthValue, 10)
@@ -51,6 +72,7 @@ function App() {
     setStatusMessage(result.message)
     setIsError(!result.isValid)
     setValidatedJson(result.parsedValue)
+    setCompactOutput(null)
     setCollapsedPaths(new Set())
   }
 
@@ -77,10 +99,16 @@ function App() {
         ? 'Output keys sorted alphabetically.'
         : 'Output key sorting turned off.',
     )
+
+    if (validatedJson !== null && compactOutput !== null) {
+      setCompactOutput(formatCompactJsonOutput(validatedJson, nextValue))
+    }
+
     setIsError(false)
   }
 
   const handleTogglePath = (path: string) => {
+    setCompactOutput(null)
     setCollapsedPaths((currentPaths) => {
       const nextPaths = new Set(currentPaths)
       if (nextPaths.has(path)) {
@@ -93,6 +121,7 @@ function App() {
   }
 
   const handleExpandAll = () => {
+    setCompactOutput(null)
     setCollapsedPaths(new Set())
     setStatusMessage('Expanded all JSON nodes.')
     setIsError(false)
@@ -103,6 +132,7 @@ function App() {
       return
     }
 
+    setCompactOutput(null)
     setCollapsedPaths(getAllCollapsiblePaths(displayedJson))
     setStatusMessage('Collapsed all JSON nodes.')
     setIsError(false)
@@ -114,6 +144,7 @@ function App() {
     }
 
     const depth = parseDepthValue()
+    setCompactOutput(null)
     setCollapsedPaths(getCollapsedPathsForExpandDepth(displayedJson, depth))
     setStatusMessage(`Expanded JSON to depth ${depth}.`)
     setIsError(false)
@@ -125,9 +156,50 @@ function App() {
     }
 
     const depth = parseDepthValue()
+    setCompactOutput(null)
     setCollapsedPaths(getCollapsedPathsForCollapseDepth(displayedJson, depth))
     setStatusMessage(`Collapsed JSON through depth ${depth}.`)
     setIsError(false)
+  }
+
+  const handleCompactJson = () => {
+    if (validatedJson === null) {
+      return
+    }
+
+    setCompactOutput(formatCompactJsonOutput(validatedJson, sortKeysAlphabetically))
+    setStatusMessage('Output compacted and ready to send.')
+    setIsError(false)
+  }
+
+  const handleCopyOutput = async () => {
+    if (outputToCopy === null) {
+      setStatusMessage('No output available to copy yet.')
+      setIsError(true)
+      return
+    }
+
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(outputToCopy)
+      } else {
+        const hiddenTextArea = document.createElement('textarea')
+        hiddenTextArea.value = outputToCopy
+        hiddenTextArea.setAttribute('readonly', 'true')
+        hiddenTextArea.style.position = 'fixed'
+        hiddenTextArea.style.opacity = '0'
+        document.body.appendChild(hiddenTextArea)
+        hiddenTextArea.select()
+        document.execCommand('copy')
+        document.body.removeChild(hiddenTextArea)
+      }
+
+      setStatusMessage('Output copied to clipboard.')
+      setIsError(false)
+    } catch {
+      setStatusMessage('Unable to copy output automatically. Please copy manually.')
+      setIsError(true)
+    }
   }
 
   return (
@@ -145,6 +217,7 @@ function App() {
             />
             <JsonOutputTree
               value={displayedJson}
+              compactOutput={compactOutput}
               indentSize={indentSize}
               collapsedPaths={collapsedPaths}
               onTogglePath={handleTogglePath}
@@ -160,6 +233,8 @@ function App() {
                 selectedIndent={indentSize}
                 sortKeysAlphabetically={sortKeysAlphabetically}
                 depthValue={depthValue}
+                onCompactJson={handleCompactJson}
+                onCopyOutput={handleCopyOutput}
                 onIndentChange={handleIndentChange}
                 onSortKeysChange={handleSortKeysChange}
                 onDepthValueChange={setDepthValue}
