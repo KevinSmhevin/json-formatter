@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { FaRegCopy } from 'react-icons/fa6'
 import './App.css'
 import { Navbar } from './components/Navbar'
 import { JsonTextArea } from './components/JsonTextArea'
@@ -15,7 +16,9 @@ import {
   getAllCollapsiblePaths,
   getCollapsedPathsForCollapseDepth,
   getCollapsedPathsForExpandDepth,
+  ROOT_JSON_PATH,
 } from './utils/jsonTreeControls'
+import { toResponseSelectorPath } from './utils/jsonSelectorPath'
 
 function App() {
   const [inputValue, setInputValue] = useState('')
@@ -23,6 +26,7 @@ function App() {
   const [indentSize, setIndentSize] = useState<IndentSize>(2)
   const [sortKeysAlphabetically, setSortKeysAlphabetically] = useState(false)
   const [collapsedPaths, setCollapsedPaths] = useState<Set<string>>(new Set())
+  const [selectedTreePath, setSelectedTreePath] = useState<string | null>(null)
   const [compactOutput, setCompactOutput] = useState<string | null>(null)
   const [depthValue, setDepthValue] = useState('2')
   const [statusMessage, setStatusMessage] = useState(
@@ -55,6 +59,14 @@ function App() {
     })
   }, [compactOutput, displayedJson, indentSize])
 
+  const selectedSelector = useMemo(() => {
+    if (selectedTreePath === null) {
+      return null
+    }
+
+    return toResponseSelectorPath(selectedTreePath)
+  }, [selectedTreePath])
+
   const parseDepthValue = (): number => {
     const parsedValue = Number.parseInt(depthValue, 10)
     if (Number.isNaN(parsedValue)) {
@@ -72,6 +84,7 @@ function App() {
     setStatusMessage(result.message)
     setIsError(!result.isValid)
     setValidatedJson(result.parsedValue)
+    setSelectedTreePath(result.isValid ? ROOT_JSON_PATH : null)
     setCompactOutput(null)
     setCollapsedPaths(new Set())
   }
@@ -118,6 +131,12 @@ function App() {
       }
       return nextPaths
     })
+  }
+
+  const handleSelectPath = (path: string) => {
+    setSelectedTreePath(path)
+    setStatusMessage(`Selector updated: ${toResponseSelectorPath(path)}`)
+    setIsError(false)
   }
 
   const handleExpandAll = () => {
@@ -202,6 +221,35 @@ function App() {
     }
   }
 
+  const handleCopySelector = async () => {
+    if (!selectedSelector) {
+      setStatusMessage('No selector available yet. Click a key or value first.')
+      setIsError(true)
+      return
+    }
+
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(selectedSelector)
+      } else {
+        const hiddenTextArea = document.createElement('textarea')
+        hiddenTextArea.value = selectedSelector
+        hiddenTextArea.setAttribute('readonly', 'true')
+        hiddenTextArea.style.position = 'fixed'
+        hiddenTextArea.style.opacity = '0'
+        document.body.appendChild(hiddenTextArea)
+        hiddenTextArea.select()
+        document.execCommand('copy')
+        document.body.removeChild(hiddenTextArea)
+      }
+
+      setStatusMessage('Selector path copied to clipboard.')
+      setIsError(false)
+    } catch {
+      setStatusMessage('Unable to copy selector automatically. Please copy manually.')
+      setIsError(true)
+    }
+  }
   return (
     <div className="app-shell">
       <Navbar title="JSON Formatter" />
@@ -220,7 +268,9 @@ function App() {
               compactOutput={compactOutput}
               indentSize={indentSize}
               collapsedPaths={collapsedPaths}
+              selectedPath={selectedTreePath}
               onTogglePath={handleTogglePath}
+              onSelectPath={handleSelectPath}
             />
           </div>
 
@@ -248,6 +298,23 @@ function App() {
               {statusMessage}
             </p>
           </div>
+
+          <button
+            type="button"
+            className="selector-row"
+            onClick={handleCopySelector}
+            aria-label="Copy selector path to clipboard"
+          >
+            <div className="selector-row-inner">
+              <div className="selector-row-text">
+                <span className="json-selector-banner-title">Selector Path</span>
+                <code className="json-selector-banner-value">
+                  {selectedSelector ?? 'Click any key or value in output to generate selector.'}
+                </code>
+              </div>
+              <FaRegCopy className="selector-copy-icon" aria-hidden="true" />
+            </div>
+          </button>
         </section>
       </main>
     </div>

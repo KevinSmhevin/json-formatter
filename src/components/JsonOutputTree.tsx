@@ -7,7 +7,9 @@ type JsonOutputTreeProps = {
   compactOutput: string | null
   indentSize: IndentSize
   collapsedPaths: Set<string>
+  selectedPath: string | null
   onTogglePath: (path: string) => void
+  onSelectPath: (path: string) => void
 }
 
 type RenderNodeParams = {
@@ -16,7 +18,9 @@ type RenderNodeParams = {
   depth: number
   indentSize: IndentSize
   collapsedPaths: Set<string>
+  selectedPath: string | null
   onTogglePath: (path: string) => void
+  onSelectPath: (path: string) => void
   objectKey?: string
   isLast?: boolean
 }
@@ -31,23 +35,53 @@ const getIndentStyle = (depth: number, indentSize: IndentSize) => {
   return { paddingInlineStart: `${depth * indentSize * 0.55}rem` }
 }
 
+const renderSelectorTarget = (
+  text: string,
+  path: string,
+  selectedPath: string | null,
+  onSelectPath: (path: string) => void,
+) => {
+  return (
+    <button
+      type="button"
+      className={`json-tree-selector-target ${selectedPath === path ? 'selected' : ''}`}
+      onClick={() => onSelectPath(path)}
+    >
+      {text}
+    </button>
+  )
+}
+
 const renderNode = ({
   value,
   path,
   depth,
   indentSize,
   collapsedPaths,
+  selectedPath,
   onTogglePath,
+  onSelectPath,
   objectKey,
   isLast = true,
 }: RenderNodeParams): ReactNode[] => {
-  const keyPrefix = objectKey === undefined ? '' : `${JSON.stringify(objectKey)}: `
   const trailingComma = isLast ? '' : ','
 
   if (!isJsonContainer(value)) {
     return [
       <div className="json-tree-line" style={getIndentStyle(depth, indentSize)} key={path}>
-        <span>{`${keyPrefix}${JSON.stringify(value)}${trailingComma}`}</span>
+        {objectKey !== undefined && (
+          <>
+            {renderSelectorTarget(
+              JSON.stringify(objectKey),
+              path,
+              selectedPath,
+              onSelectPath,
+            )}
+            <span>: </span>
+          </>
+        )}
+        {renderSelectorTarget(JSON.stringify(value), path, selectedPath, onSelectPath)}
+        <span>{trailingComma}</span>
       </div>,
     ]
   }
@@ -62,7 +96,24 @@ const renderNode = ({
   if (entries.length === 0) {
     return [
       <div className="json-tree-line" style={getIndentStyle(depth, indentSize)} key={path}>
-        <span>{`${keyPrefix}${openToken}${closeToken}${trailingComma}`}</span>
+        {objectKey !== undefined && (
+          <>
+            {renderSelectorTarget(
+              JSON.stringify(objectKey),
+              path,
+              selectedPath,
+              onSelectPath,
+            )}
+            <span>: </span>
+          </>
+        )}
+        {renderSelectorTarget(
+          `${openToken}${closeToken}`,
+          path,
+          selectedPath,
+          onSelectPath,
+        )}
+        <span>{trailingComma}</span>
       </div>,
     ]
   }
@@ -80,7 +131,24 @@ const renderNode = ({
         >
           +
         </button>
-        <span>{`${keyPrefix}${openToken}...${closeToken}${trailingComma}`}</span>
+        {objectKey !== undefined && (
+          <>
+            {renderSelectorTarget(
+              JSON.stringify(objectKey),
+              path,
+              selectedPath,
+              onSelectPath,
+            )}
+            <span>: </span>
+          </>
+        )}
+        {renderSelectorTarget(
+          `${openToken}...${closeToken}`,
+          path,
+          selectedPath,
+          onSelectPath,
+        )}
+        <span>{trailingComma}</span>
       </div>,
     ]
   }
@@ -95,7 +163,18 @@ const renderNode = ({
       >
         -
       </button>
-      <span>{`${keyPrefix}${openToken}`}</span>
+      {objectKey !== undefined && (
+        <>
+          {renderSelectorTarget(
+            JSON.stringify(objectKey),
+            path,
+            selectedPath,
+            onSelectPath,
+          )}
+          <span>: </span>
+        </>
+      )}
+      {renderSelectorTarget(openToken, path, selectedPath, onSelectPath)}
     </div>,
   ]
 
@@ -108,7 +187,9 @@ const renderNode = ({
         depth: depth + 1,
         indentSize,
         collapsedPaths,
+        selectedPath,
         onTogglePath,
+        onSelectPath,
         objectKey: Array.isArray(value) ? undefined : String(segment),
         isLast: index === entries.length - 1,
       }),
@@ -129,7 +210,9 @@ export const JsonOutputTree = ({
   compactOutput,
   indentSize,
   collapsedPaths,
+  selectedPath,
   onTogglePath,
+  onSelectPath,
 }: JsonOutputTreeProps) => {
   return (
     <div className="json-output">
@@ -148,7 +231,9 @@ export const JsonOutputTree = ({
             depth: 0,
             indentSize,
             collapsedPaths,
+            selectedPath,
             onTogglePath,
+            onSelectPath,
           })
         )}
       </div>
